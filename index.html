@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zone01 • My Profile</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="app-title">Zone01 • My Profile</div>
+      <div id="authArea" class="row">
+        <span id="who" class="muted"></span>
+        <button id="logoutBtn" class="hidden">Logout</button>
+      </div>
+    </header>
+
+    <section id="loginCard" class="card">
+      <h2>Login</h2>
+      <div class="grid cols-2">
+        <label>
+          Username / Email
+          <input id="idField" placeholder="username or email">
+        </label>
+        <label>
+          Password
+          <input id="pwField" type="password" placeholder="••••••••">
+        </label>
+      </div>
+      <button id="loginBtn" class="primary">Sign in</button>
+      <span id="loginErr" class="muted"></span>
+    </section>
+
+    <section id="profileArea" class="hidden">
+      <div id="kpis"></div>
+      <div id="charts"></div>
+    </section>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

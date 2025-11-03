@@ -1,0 +1,37 @@
+    :root{
+      --bg:#0f172a;/*slate-900*/
+      --panel:#111827ee;/*gray-900*/
+      --muted:#94a3b8;/*slate-400*/
+      --text:#e5e7eb;/*gray-200*/
+      --accent:#60a5fa;/*blue-400*/
+      --ok:#22c55e;/*green-500*/
+      --bad:#ef4444;/*red-500*/
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1200px 600px at 80% -10%, #1e293b, transparent),var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    a{color:var(--accent)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;gap:16px;justify-content:space-between}
+    .app-title{font-size:20px;font-weight:700}
+    .card{background:var(--panel);border:1px solid #1f2937;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .grid{display:grid;gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (max-width:900px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+    input,button{font:inherit}
+    input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--text)}
+    button{padding:10px 14px;border-radius:12px;border:1px solid #374151;background:#0b1220;color:var(--text);cursor:pointer}
+    button.primary{background:linear-gradient(135deg,#2563eb,#06b6d4);border:none}
+    .row{display:flex;gap:10px;align-items:center}
+    .right{margin-left:auto}
+    .muted{color:var(--muted)}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:.25rem .5rem;border-radius:999px;border:1px solid #334155;color:var(--text);font-size:12px}
+    .hidden{display:none!important}
+    .kpi{font-size:28px;font-weight:800}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .hr{height:1px;background:#1f2937;margin:12px 0}
+    .footer{margin-top:18px;font-size:12px;color:#94a3b8}
+    /* SVG helpers */
+    svg{width:100%;height:auto}
+    .axis text{font-size:12px;fill:#a1a1aa}
+    .axis path,.axis line{stroke:#334155}
