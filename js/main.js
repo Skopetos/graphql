@@ -131,8 +131,17 @@ async function renderAfterLogin() {
 
   // 3) XP by project (Top 10)
   const byProject = {};
+
   xpData.forEach(t => {
     const name = t.object?.name || (t.path?.split("/").slice(-2).join("/") || `#${t.objectId}`);
+    const lower = name.toLowerCase();
+
+    // ❌ EXCLUDE piscine
+    if (lower.includes("piscine")) return;
+
+    // ❌ EXCLUDE "module"
+    if (lower.includes("module")) return;
+
     byProject[name] = (byProject[name] || 0) + t.amount;
   });
   const top = Object.entries(byProject)
