@@ -1,6 +1,6 @@
 import { signin, decodeJWT, isExpired } from "./auth.js";
 import { gql, Q_USER, Q_XP, Q_RESULTS, Q_PROGRESS, Q_EVENT_OBJECT_IDS, Q_AUDITS_EVENT } from "./graphql.js";
-import { lineChart, barChart } from "./charts.js";
+import { lineChart, barChart, donut } from "./charts.js";
 import { sum, formatNumber, show, hide } from "./ui.js";
 
 
@@ -19,11 +19,10 @@ const els = {
   charts: document.getElementById("charts"),
 };
 
-function svg(viewBox) {
-  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  s.setAttribute("viewBox", viewBox);
-  return s;
+function svg() {
+  return document.createElementNS("http://www.w3.org/2000/svg", "svg");
 }
+
 
 /* ---------- JWT persistence ---------- */
 function setJWT(token) {
@@ -102,6 +101,33 @@ async function renderAfterLogin() {
   const svg1 = svg("0 0 800 300");
   lineChart(svg1, cumulative);
   els.charts.appendChild(svg1);
+
+  const auditUp   = audits.filter(a => a.type === "up").reduce((s,a)=>s+a.amount, 0);
+  const auditDown = audits.filter(a => a.type === "down").reduce((s,a)=>s+a.amount, 0);
+
+  const cardAudit = document.createElement("div");
+  cardAudit.className = "card";
+  cardAudit.style.marginLeft = "180px";
+  cardAudit.style.marginBottom = "100px";
+  cardAudit.style.display = "inline-flex";
+  cardAudit.style.flexDirection = "column";
+  cardAudit.style.alignItems = "center";
+  cardAudit.style.justifyContent = "center";
+  cardAudit.style.padding = "8px 12px";   // smaller padding = smaller box
+  cardAudit.style.width = "auto";         // don't stretch
+  cardAudit.className = "card";
+  cardAudit.innerHTML = `<h3 style="margin-top:0">Audit Ratio</h3>`;
+  const svgAudit = svg();
+    donut(svgAudit, [
+      { key: "Up", value: auditUp },
+      { key: "Down", value: auditDown }
+    ], {
+      size: 600,
+      inner: 150,
+      strokeW: 80
+    });
+  cardAudit.appendChild(svgAudit);
+  els.charts.appendChild(cardAudit);
 
   // 3) XP by project (Top 10)
   const byProject = {};

@@ -91,7 +91,7 @@ export function lineChart(
     fill: "white"
   });
   const finalValue = Math.floor(ys[ys.length - 1]/1000);
-  t.textContent = (typeof formatNumber === "function" ? formatNumber(finalValue) : finalValue) + " XP";
+  t.textContent = (typeof formatNumber === "function" ? formatNumber(finalValue) : finalValue) + " KB";
   svg.appendChild(t);
 }
 
@@ -153,4 +153,73 @@ export function barChart(svg, items, { minBarW = 70, h = 460, padX = 56, padTop 
   });
 }
 
+// --- Donut chart: expects [{key:"Up", value:number}, {key:"Down", value:number}]
+export function donut(svg, items, { size = 320, inner = 70, strokeW = 30 } = {}) {
+  clearSVG(svg);
 
+  const total = items.reduce((s, d) => s + (d.value || 0), 0);
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+
+  const c = size / 2;
+
+  if (!total) {
+    svg.appendChild(elSVG("circle", {
+      cx: c,
+      cy: c,
+      r: inner + strokeW / 2,
+      fill: "none",
+      stroke: "#334155",
+      "stroke-width": strokeW
+    }));
+    return;
+  }
+
+  const radius = inner + strokeW / 2;
+  const circ = 2 * Math.PI * radius;
+
+  const colors = { Up: "#22c55e", Down: "#ef4444" };
+
+  let acc = 0;
+  items.forEach(d => {
+    const frac = (d.value || 0) / total;
+    const len = Math.max(0, frac * circ - 0.0001);
+    const dash = `${len} ${circ - len}`;
+    svg.appendChild(elSVG("circle", {
+      cx: c,
+      cy: c,
+      r: radius,
+      fill: "none",
+      stroke: colors[d.key] || "#60a5fa",
+      "stroke-width": strokeW,
+      "stroke-dasharray": dash,
+      "stroke-dashoffset": -acc
+    }));
+    acc += len;
+  });
+
+  const up = items.find(i => i.key.toLowerCase() === "up")?.value || 0;
+  const down = items.find(i => i.key.toLowerCase() === "down")?.value || 0;
+  const ratio = down ? up / down : up ? Infinity : 0;
+
+
+  //svg.appendChild(elSVG("text", {
+    //x: c,
+   // y: c - 60,
+   // "text-anchor": "middle",
+   // fill: "white",
+   // "font-size": 11,
+   // "opacity": 0.8
+ // })).textContent = "Audit ratio";
+
+  svg.appendChild(elSVG("text", {
+    x: c,
+    y: c + 40,
+    "text-anchor": "middle",
+    fill: "white",
+    "font-size": 100,
+    "font-weight": 500
+  })).textContent = Number.isFinite(ratio) ? `${ratio.toFixed(2)}` : "∞×";
+
+}
