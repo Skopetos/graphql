@@ -1,4 +1,4 @@
-export const AUTH_URL = "https://platform.zone01.gr/api/auth/signin";
+export const AUTH_URL = "https://green-sky-91e0.giannhsgew.workers.dev/login";
 
 export async function signin(id, pw) {
   const auth = btoa(`${id}:${pw}`);
@@ -11,8 +11,9 @@ export async function signin(id, pw) {
     }
   });
   if (!res.ok) throw new Error(res.status === 401 ? "Invalid credentials" : `Sign-in failed (${res.status})`);
-  const txt = await res.text();
-  return txt.replace(/\\\"/g, "").replace(/^\"|\"$/g, "");
+  const txt = await res.json();
+  console.log("JWT response:", txt);
+  return txt.token;
 }
 
 export function decodeJWT(token) {

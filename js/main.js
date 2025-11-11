@@ -1,7 +1,8 @@
 import { signin, decodeJWT, isExpired } from "./auth.js";
-import { gql, Q_USER, Q_XP, Q_RESULTS } from "./graphql.js";
-import { lineChart, donut, barChart } from "./charts.js";
+import { gql, Q_USER, Q_XP, Q_RESULTS, Q_PROGRESS, Q_EVENT_OBJECT_IDS, Q_AUDITS_EVENT } from "./graphql.js";
+import { lineChart, barChart } from "./charts.js";
 import { sum, formatNumber, show, hide } from "./ui.js";
+
 
 const LS_KEY = "z01_jwt";
 
@@ -41,8 +42,16 @@ function clearJWT() {
 async function renderAfterLogin() {
   // Basic user (normal query)
   const me = await gql(Q_USER);
+  console.log("Logged in user:", me);
   const user = me.user?.[0] || me.user;
   if (!user) throw new Error("Could not load user");
+
+  const eventObjIds = (await gql(Q_EVENT_OBJECT_IDS)).transaction
+    .map(t => t.objectId)
+    .filter(id => id != null);
+
+  const idSet = new Set(eventObjIds);
+  
 
   // Switch UI
   show(els.profile);
@@ -51,39 +60,36 @@ async function renderAfterLogin() {
   els.who.textContent = `Signed in as ${user.login}`;
 
   // Queries with arguments + nested fields
-  const xpData = (await gql(Q_XP, { limit: 5000 })).transaction;
-  const results = (await gql(Q_RESULTS, { limit: 5000 })).result;
+  
+  const xpData   = (await gql(Q_XP)).transaction;          // already eventId=200
+  const results  = (await gql(Q_RESULTS)).result;          // no eventId -> filter by idSet
+  const progress = (await gql(Q_PROGRESS)).progress;       // no eventId -> filter by idSet
+  const audits   = (await gql(Q_AUDITS_EVENT)).transaction; // audits for eventId=200
+  const resultsEvt  = results.filter(r => idSet.has(r.object?.id ?? r.objectId ?? null) || idSet.has(r.objectId ?? null));
+  // If your "result" rows don’t carry objectId directly, use path/object name matching if needed.
+  // Most schemas include `result.object.id`; if not, keep using what you already have + fallback on path.
+
+  const progressEvt = progress.filter(p => idSet.has(p.objectId ?? null));
 
   const totalXP = sum(xpData, t => t.amount);
-  const pass = results.filter(r => Number(r.grade) === 1).length;
-  const fail = results.filter(r => Number(r.grade) === 0).length;
+
+  // classify results
+  const isProject = (r) => r.object?.type === "project";
+  const isPiscine = (r) => (r.path || "").includes("piscine-");
 
   // KPIs
   els.kpis.innerHTML = `
-    <div class="grid cols-3" style="margin-top:16px">
-      <div class="card">
-        <div class="muted">User</div>
-        <div class="kpi">${user.login}</div>
-      </div>
-      <div class="card">
-        <div class="muted">Total XP</div>
-        <div class="kpi">${formatNumber(totalXP)}</div>
-      </div>
-      <div class="card">
-        <div class="muted">Results</div>
-        <div class="row" style="gap:24px">
-          <div>
-            <div class="muted">Pass</div>
-            <div class="kpi" style="color:var(--ok)">${pass}</div>
-          </div>
-          <div>
-            <div class="muted">Fail</div>
-            <div class="kpi" style="color:var(--bad)">${fail}</div>
-          </div>
-        </div>
-      </div>
+  <div class="grid cols-2" style="margin-top:16px">
+    <div class="card">
+      <div class="muted">User</div>
+      <div class="kpi">${user.login}</div>
     </div>
-  `;
+    <div class="card">
+      <div class="muted">Total XP</div>
+      <div class="kpi">${formatNumber(Math.floor(totalXP/1000))} KB</div>
+    </div>
+  </div>
+`;
 
   // Charts
   els.charts.innerHTML = "";
@@ -96,11 +102,6 @@ async function renderAfterLogin() {
   const svg1 = svg("0 0 800 300");
   lineChart(svg1, cumulative);
   els.charts.appendChild(svg1);
-
-  // 2) Pass/Fail donut
-  const svg2 = svg("0 0 320 320");
-  donut(svg2, [{ key:"Pass", value:pass }, { key:"Fail", value:fail }]);
-  els.charts.appendChild(svg2);
 
   // 3) XP by project (Top 10)
   const byProject = {};
@@ -132,9 +133,10 @@ els.loginBtn.addEventListener("click", async () => {
 
   try {
     const jwt = await signin(id, pw);
+    console.log("Received JWT:", jwt);
     setJWT(jwt);
-    // Optional: inspect token
-    decodeJWT(jwt);
+    
+    
     await renderAfterLogin();
   } catch (e) {
     console.error(e);
