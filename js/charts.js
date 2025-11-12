@@ -223,3 +223,125 @@ export function donut(svg, items, { size = 320, inner = 70, strokeW = 30 } = {})
   })).textContent = Number.isFinite(ratio) ? `${ratio.toFixed(2)}` : "∞×";
 
 }
+
+// --- Radar (Spider) chart: expects [{ key: "Skill", value: number }, ...]
+export function radarChart(
+  svg,
+  items,
+  {
+    size = 320,
+    levels = 4,          // concentric webs
+    maxValue = null,     // if null -> compute from data
+    margin = 28,         // padding around the circle
+    labelFontSize = 12,
+    stroke = "#60a5fa",
+    fill = "#60a5fa",
+    fillOpacity = 0.18,
+    gridColor = "#334155",
+    axisColor = "#475569"
+  } = {}
+) {
+  clearSVG(svg);
+
+  // guard
+  if (!items || items.length < 3) {
+    svg.appendChild(elSVG("text", { x: 20, y: 40, fill: "#a1a1aa" }))
+       .textContent = "Not enough skills";
+    return;
+  }
+
+  // viewBox & center
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  const c = size / 2;
+  const radius = (size / 2) - margin;
+
+  // scale
+  const m = (maxValue ?? Math.max(...items.map(d => +d.value || 0))) || 1;
+
+  // angles
+  const N = items.length;
+  const angle = (i) => (Math.PI * 2 * i / N) - Math.PI / 2; // start at top
+
+  // grid (concentric polygons)
+  for (let l = 1; l <= levels; l++) {
+    const r = radius * (l / levels);
+    const path = [];
+    for (let i = 0; i < N; i++) {
+      const a = angle(i);
+      const x = c + Math.cos(a) * r;
+      const y = c + Math.sin(a) * r;
+      path.push(i === 0 ? "M" : "L", x, y);
+    }
+    path.push("Z");
+    svg.appendChild(elSVG("path", {
+      d: path.join(" "),
+      fill: "none",
+      stroke: gridColor,
+      "stroke-width": 1
+    }));
+  }
+
+  // axes + labels
+  for (let i = 0; i < N; i++) {
+    const a = angle(i);
+    const x = c + Math.cos(a) * radius;
+    const y = c + Math.sin(a) * radius;
+
+    // axis line
+    svg.appendChild(elSVG("line", {
+      x1: c, y1: c, x2: x, y2: y,
+      stroke: axisColor, "stroke-width": 1
+    }));
+
+    // label (slightly outside)
+    const lx = c + Math.cos(a) * (radius + 14);
+    const ly = c + Math.sin(a) * (radius + 14);
+    const t = elSVG("text", {
+      x: lx,
+      y: ly,
+      "font-size": labelFontSize,
+      fill: "white",
+      "text-anchor": Math.abs(Math.cos(a)) < 0.1 ? "middle" : (Math.cos(a) > 0 ? "start" : "end"),
+      "dominant-baseline": Math.abs(Math.sin(a)) < 0.1 ? "middle" : (Math.sin(a) > 0 ? "hanging" : "alphabetic")
+    });
+    t.textContent = items[i].key;
+    svg.appendChild(t);
+  }
+
+  // data polygon
+  const poly = [];
+  items.forEach((d) => {
+    const v = Math.max(0, Math.min(1, (+d.value || 0) / m));
+    poly.push(v);
+  });
+
+  const path = [];
+  for (let i = 0; i < N; i++) {
+    const a = angle(i);
+    const r = radius * poly[i];
+    const x = c + Math.cos(a) * r;
+    const y = c + Math.sin(a) * r;
+    path.push(i === 0 ? "M" : "L", x, y);
+  }
+  path.push("Z");
+
+  // fill
+  svg.appendChild(elSVG("path", {
+    d: path.join(" "),
+    fill,
+    "fill-opacity": fillOpacity,
+    stroke,
+    "stroke-width": 2
+  }));
+
+  // points
+  for (let i = 0; i < N; i++) {
+    const a = angle(i);
+    const r = radius * poly[i];
+    const x = c + Math.cos(a) * r;
+    const y = c + Math.sin(a) * r;
+    svg.appendChild(elSVG("circle", { cx: x, cy: y, r: 3, fill: stroke }));
+  }
+}

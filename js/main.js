@@ -1,8 +1,10 @@
 import { signin, decodeJWT, isExpired } from "./auth.js";
-import { gql, Q_USER, Q_XP, Q_RESULTS, Q_PROGRESS, Q_EVENT_OBJECT_IDS, Q_AUDITS_EVENT } from "./graphql.js";
-import { lineChart, barChart, donut } from "./charts.js";
+import { gql, Q_USER, Q_XP, Q_RESULTS, Q_PROGRESS, Q_EVENT_OBJECT_IDS, Q_AUDITS_EVENT, Q_SKILL_TX } from "./graphql.js";
+import { lineChart, barChart, donut,  radarChart } from "./charts.js";
 import { sum, formatNumber, show, hide } from "./ui.js";
 
+
+window.gql = gql;
 
 const LS_KEY = "z01_jwt";
 
@@ -75,6 +77,8 @@ async function renderAfterLogin() {
   // classify results
   const isProject = (r) => r.object?.type === "project";
   const isPiscine = (r) => (r.path || "").includes("piscine-");
+
+  
 
   // KPIs
   els.kpis.innerHTML = `
@@ -151,7 +155,46 @@ async function renderAfterLogin() {
   const svg3 = svg("0 0 800 400");
   barChart(svg3, top);
   els.charts.appendChild(svg3);
+    // --- Skills Overview (from transactions: type like "skill%") ---
+  const skillTx = (await gql(Q_SKILL_TX)).transaction || [];
+  const cardSkills = document.createElement("div");
+  cardSkills.className = "card";
+  cardSkills.style.marginTop = "40px";
+  cardSkills.style.padding = "16px";
+  cardSkills.innerHTML = `<h3 style="margin-top:0">Skills Overview</h3>`;
+  els.charts.appendChild(cardSkills);
+
+  const items = skillTx
+    .map(t => {
+      // strip the "skill" prefix and prettify
+      const label = (t.type || "")
+        .replace(/^skill[:/_\-\s]?/i, "")
+        .replace(/[_:-]+/g, " ")
+        .trim() || t.type || "Skill";
+      return { key: label, value: Number(t.amount) || 0 };
+    })
+    .filter(d => d.value > 0)
+    .sort((a,b) => b.value - a.value)
+    .slice(0, 7);
+
+  if (items.length < 3) {
+    const p = document.createElement("div");
+    p.className = "muted";
+    p.textContent = "Not enough skills";
+    cardSkills.appendChild(p);
+  } else {
+    const svgSkills = svg();
+    radarChart(svgSkills, items, {
+      size: 200,    // match donut's canvas
+      levels: 5,
+      margin: 40    // similar inner spacing to look balanced
+    });
+        cardSkills.appendChild(svgSkills);
+  }
 }
+
+
+
 
 /* ---------- Sign in ---------- */
 els.loginBtn.addEventListener("click", async () => {

@@ -79,3 +79,18 @@ export const Q_AUDITS_EVENT = `
     createdAt
   }
 }`;
+
+
+
+export const Q_SKILL_TX = `
+{
+  transaction(
+    order_by: [{ type: asc }, { amount: desc }]
+    distinct_on: type
+    where: { eventId: { _eq: 200 }, type: { _like: "skill%" } }
+  ) {
+    type
+    amount
+  }
+}`;
+
