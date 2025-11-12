@@ -10,10 +10,21 @@ export async function signin(id, pw) {
       "Accept": "application/json"
     }
   });
-  if (!res.ok) throw new Error(res.status === 401 ? "Invalid credentials" : `Sign-in failed (${res.status})`);
+ 
   const txt = await res.json();
-  console.log("JWT response:", txt);
-  return txt.token;
+console.log("JWT response:", txt);
+
+// if API signals app-level failure
+if (txt && txt.ok === false) {
+  throw new Error(txt.error || "Invalid credentials");
+}
+
+// extract token and validate
+const token = txt?.token || txt?.jwt || txt?.access_token || null;
+if (!token || token === "undefined" || token === "null") {
+  throw new Error("Invalid credentials");
+}
+return token.startsWith("Bearer ") ? token.slice(7) : token;
 }
 
 export function decodeJWT(token) {

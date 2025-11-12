@@ -2,6 +2,8 @@ export const GQL_URL = "https://green-sky-91e0.giannhsgew.workers.dev/query";
 
 export async function gql(query, variables = {}) {
   console.log("jwt in gql:", window._jwt);
+  if (!window._jwt) throw new Error("Not signed in");
+  const auth = window._jwt.startsWith("Bearer ") ? window._jwt : `Bearer ${window._jwt}`;
   const res = await fetch(GQL_URL, {
     method: "POST",
     headers: {

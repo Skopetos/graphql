@@ -167,20 +167,24 @@ els.loginBtn.addEventListener("click", async () => {
   els.loginBtn.textContent = "Signing in…";
 
   try {
-    const jwt = await signin(id, pw);
-    console.log("Received JWT:", jwt);
-    setJWT(jwt);
-    
-    
-    await renderAfterLogin();
+  const jwt = await signin(id, pw);
+  console.log("Received JWT:", jwt);
+
+  // 🧩 sanity check — ensure it's a valid 3-part JWT before continuing
+  if (typeof jwt !== "string" || jwt.split(".").length !== 3) {
+    throw new Error("Invalid credentials");
+  }
+
+  setJWT(jwt);
+  await renderAfterLogin();
   } catch (e) {
     console.error(e);
     els.loginErr.textContent = e.message || "Login failed";
   } finally {
-    els.loginBtn.disabled = false;
-    els.loginBtn.textContent = "Sign in";
-  }
-});
+      els.loginBtn.disabled = false;
+      els.loginBtn.textContent = "Sign in";
+    }
+  });
 
 /* ---------- Logout ---------- */
 els.logoutBtn.addEventListener("click", () => {
